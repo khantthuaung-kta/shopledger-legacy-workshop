@@ -37,6 +37,18 @@ test('a string settlement updates the total and balance numerically', () => {
   assert.equal(ledger.listCustomers(db)[0].balance, 425);
 });
 
+test('fractional-paise settlements accumulate before rounding the balance', () => {
+  const db = khata();
+
+  assert.equal(ledger.recordSettlement(db, '1', '0.004').ok, true);
+  assert.equal(ledger.recordSettlement(db, '1', '0.004').ok, true);
+
+  assert.deepEqual(db.settlements.map(settlement => settlement.amount), [0.004, 0.004]);
+  assert.ok(Math.abs(db.customers[0].totalSettled - 50.008) < 1e-10);
+  assert.equal(db.customers[0].balance, 449.99);
+  assert.equal(ledger.listCustomers(db)[0].balance, 449.99);
+});
+
 test('a nonpositive settlement is rejected without changing the account or history', () => {
   const db = khata();
 
